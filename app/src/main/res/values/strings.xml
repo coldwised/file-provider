@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">File manager</string>
+    <string name="main_topbar_title">Проводник</string>
+    <string name="file_changed">new *</string>
+</resources>
