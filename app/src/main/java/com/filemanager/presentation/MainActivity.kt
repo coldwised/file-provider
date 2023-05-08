@@ -1,6 +1,7 @@
 package com.filemanager.presentation
 
 import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,8 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import com.filemanager.core.navigation.AppNavigator
 import com.filemanager.ui.theme.FileManagerTheme
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        viewModel
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             TransparentSystemBars(isSystemInDarkTheme())
@@ -49,10 +50,18 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun checkPermission(): Boolean {
-    val notificationPermissionState = rememberPermissionState(permission = Manifest.permission.READ_EXTERNAL_STORAGE)
-    return if(!notificationPermissionState.status.isGranted) {
+    val notificationPermissionState = if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        rememberMultiplePermissionsState(permissions = listOf(Manifest.permission.READ_EXTERNAL_STORAGE))
+    } else {
+        rememberMultiplePermissionsState(permissions = listOf(
+            Manifest.permission.READ_MEDIA_AUDIO,
+            Manifest.permission.READ_MEDIA_IMAGES,
+            Manifest.permission.READ_MEDIA_VIDEO,
+        ))
+    }
+    return if(!notificationPermissionState.allPermissionsGranted) {
         SideEffect {
-            notificationPermissionState.launchPermissionRequest()
+            notificationPermissionState.launchMultiplePermissionRequest()
         }
         false
     } else true

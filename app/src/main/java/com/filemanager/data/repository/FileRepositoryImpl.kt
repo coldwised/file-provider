@@ -17,17 +17,20 @@ class FileRepositoryImpl @Inject constructor(
 ): FileRepository {
     override fun getFiles(path: String): Flow<List<FileModel>> {
         return flow {
-            val mimeTypeMap = MimeTypeMap.getSingleton()
-            val files = File(path).listFiles()?.map { file ->
-                val newChanges = !dao.hasItem(file.hashCode())
 
-                val mimeType = if(file.isDirectory) "folder" else {
+            val mimeTypeMap = MimeTypeMap.getSingleton()
+            var isChanged = false
+            val files = File(path).listFiles()?.map { file ->
+                val mimeType = if(file.isDirectory) {
+                    "folder"
+                } else {
+                    isChanged = dao.getFileByPath(file.path)?.isChanged ?: false
                     mimeTypeMap
                         .getMimeTypeFromExtension(file.extension)
                         ?.substringBefore('/') ?: "file"
                 }
                 FileModel(
-                    isChanged = newChanges,
+                    isChanged = isChanged,
                     name = file.name,
                     type = mimeType,
                     size = file.length(),
