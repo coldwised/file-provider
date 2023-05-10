@@ -26,6 +26,7 @@ import com.filemanager.domain.model.FileModel
 import com.filemanager.presentation.main.type.OrderType
 import com.filemanager.presentation.main.type.SortType
 import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.math.log10
 import kotlin.math.pow
 
@@ -47,7 +48,7 @@ internal fun MainScreen(
         path = path,
         onFileClick = onFileClick,
         onBackClick = onBackClick,
-        files = state.files,
+        files = state.files.orEmpty(),
         onShareFileClick = onShareFileClick,
         isLoading = state.isLoading,
         listSortType = state.listSortType,
@@ -267,7 +268,7 @@ private fun FileItem(
     onFileClick: (FileModel) -> Unit,
     onShareFileClick: (FileModel) -> Unit
 ) {
-    val dateFormatter = SimpleDateFormat("dd.MM.yyyy")
+    val dateFormatter = SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH)
     val formattedDate = dateFormatter.format(file.creationDate)
     val name = file.name
     val size = formatFileSize(file.size)
