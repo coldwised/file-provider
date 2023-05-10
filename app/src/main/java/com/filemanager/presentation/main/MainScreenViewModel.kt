@@ -72,6 +72,28 @@ class MainScreenViewModel @Inject constructor(
                                 }
                             }
                         }
+                        SortType.ByType -> {
+                            if(it.listOrderType == OrderType.ByDescending) {
+                                files.sortedByDescending { fileModel ->
+                                    fileModel.type
+                                }
+                            } else {
+                                files.sortedBy { fileModel ->
+                                    fileModel.type
+                                }
+                            }
+                        }
+                        SortType.ByDate -> {
+                            if(it.listOrderType == OrderType.ByDescending) {
+                                files.sortedByDescending { fileModel ->
+                                    fileModel.creationDate
+                                }
+                            } else {
+                                files.sortedBy { fileModel ->
+                                    fileModel.creationDate
+                                }
+                            }
+                        }
                     },
                     listSortType = sortType,
                     sortTypeDropDownMenuVisible = false

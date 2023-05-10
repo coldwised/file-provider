@@ -22,23 +22,16 @@ class FileRepositoryImpl @Inject constructor(
             coroutineScope {
                 val dao = dao
                 val mimeTypeMap = MimeTypeMap.getSingleton()
-                var isChanged = false
                 val resultFiles = mutableListOf<Deferred<FileModel>>()
                 File(path).listFiles()?.sortedBy{ it.name }?.forEach { file ->
                     resultFiles.add(async(Dispatchers.IO) {
+                        var isChanged = false
                         val mimeType = if(file.isDirectory) {
                             "folder"
                         } else {
                             val filePath = file.path
                             val fileEntity = dao.getFileByPath(filePath)
-                            if(fileEntity == null) {
-                                dao.insertFile(
-                                    FileEntity(
-                                        path = filePath,
-                                        hash_code = file.contentHashCode(),
-                                    )
-                                )
-                            } else {
+                            if(fileEntity != null) {
                                 isChanged = if(fileEntity.isChanged) true else {
                                     file.contentHashCode() != fileEntity.hash_code
                                 }

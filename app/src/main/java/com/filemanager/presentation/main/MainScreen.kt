@@ -215,7 +215,7 @@ private fun MainTopBar(
 fun SortTypeDropDownItem(sortType: SortType, onClick: (SortType) -> Unit) {
     DropdownMenuItem(
         modifier = Modifier
-            .height(34.dp)
+            .height(38.dp)
             .width(180.dp),
         text = {
             Text(
@@ -230,7 +230,7 @@ fun SortTypeDropDownItem(sortType: SortType, onClick: (SortType) -> Unit) {
 fun OrderTypeDropDownItem(sortType: OrderType, onClick: (OrderType) -> Unit) {
     DropdownMenuItem(
         modifier = Modifier
-            .height(34.dp)
+            .height(38.dp)
             .width(180.dp),
         text = {
             Text(
