@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,6 +26,8 @@ import com.filemanager.domain.model.FileModel
 import com.filemanager.presentation.main.type.OrderType
 import com.filemanager.presentation.main.type.SortType
 import java.text.SimpleDateFormat
+import kotlin.math.log10
+import kotlin.math.pow
 
 @Composable
 internal fun MainScreen(
@@ -149,7 +152,9 @@ private fun MainTopBar(
             }
         )
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
         ) {
@@ -265,7 +270,7 @@ private fun FileItem(
     val dateFormatter = SimpleDateFormat("dd.MM.yyyy")
     val formattedDate = dateFormatter.format(file.creationDate)
     val name = file.name
-    val size = file.size.toString()
+    val size = formatFileSize(file.size)
     val isChanged = file.isChanged
     val fileType = file.type
     val icon = when(fileType) {
@@ -281,12 +286,23 @@ private fun FileItem(
                 onFileClick(file)
             },
         leadingContent = {
-            Icon(painter = icon, contentDescription = null)
+            Icon(painter = icon, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
         },
-        trailingContent = if(fileType == "folder") null else {
-            {
-                IconButton(onClick = { onShareFileClick(file) }) {
+        trailingContent = {
+            if(fileType == "folder") {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowRight,
+                    contentDescription = null
+                )
+            } else {
+                IconButton(
+                    modifier = Modifier
+                        .size(30.dp),
+                    onClick = { onShareFileClick(file) }
+                ) {
                     Icon(
+                        modifier = Modifier
+                            .size(24.dp),
                         imageVector = Icons.Default.Share,
                         contentDescription = null
                     )
@@ -310,7 +326,7 @@ private fun FileItem(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = size + " Б"
+                        text = size
                     )
                     Spacer(modifier = Modifier.width(18.dp))
                     Text(
@@ -327,4 +343,11 @@ private fun FileItem(
             }
         }
     )
+}
+
+private fun formatFileSize(size: Long): String {
+    if (size <= 0) return "0 B"
+    val units = arrayOf("B", "KB", "MB", "GB", "TB")
+    val digitGroups = (log10(size.toDouble()) / log10(1024.0)).toInt()
+    return String.format("%.2f %s", size / 1024.0.pow(digitGroups.toDouble()), units[digitGroups])
 }

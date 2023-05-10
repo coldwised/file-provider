@@ -14,6 +14,7 @@ import javax.inject.Inject
 class SaveFilesEntityUseCase @Inject constructor(
     private val fileDao: FileDao
 ) {
+    @OptIn(ExperimentalCoroutinesApi::class)
     suspend operator fun invoke(): Flow<Unit> {
         return channelFlow {
             coroutineScope rootScope@{
@@ -21,7 +22,7 @@ class SaveFilesEntityUseCase @Inject constructor(
                     fileDao.resetFiles()
                     send(Unit)
                 }
-                launch(Dispatchers.IO) {
+                launch(Dispatchers.IO.limitedParallelism(10)) {
                     saveAllFilesHashes(this, File(Environment.getExternalStorageDirectory().path))
                     send(Unit)
                 }
@@ -32,7 +33,7 @@ class SaveFilesEntityUseCase @Inject constructor(
     private suspend fun saveAllFilesHashes(coroutineScope: CoroutineScope, rootDirectory: File) {
         val fileDao = fileDao
         rootDirectory.walkTopDown().forEach { file ->
-            coroutineScope.launch(Dispatchers.IO) {
+            coroutineScope.launch() {
                 if (!file.isDirectory) {
                     val existingFile = fileDao.getFileByPath(file.path)
                     val hashCode = file.contentHashCode()
