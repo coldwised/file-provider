@@ -8,6 +8,6 @@ import com.filemanager.data.local.FileDao
 data class FileEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val path: String,
-    val hash_code: Long,
+    val lastModified: Long,
     val isChanged: Boolean = false,
 )

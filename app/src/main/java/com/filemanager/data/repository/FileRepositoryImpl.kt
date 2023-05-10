@@ -2,8 +2,6 @@ package com.filemanager.data.repository
 
 import android.webkit.MimeTypeMap
 import com.filemanager.data.local.FileDao
-import com.filemanager.data.local.entity.FileEntity
-import com.filemanager.data.util.contentHashCode
 import com.filemanager.domain.model.FileModel
 import com.filemanager.domain.repository.FileRepository
 import kotlinx.coroutines.*
@@ -22,25 +20,18 @@ class FileRepositoryImpl @Inject constructor(
             coroutineScope {
                 val dao = dao
                 val mimeTypeMap = MimeTypeMap.getSingleton()
-                var isChanged = false
                 val resultFiles = mutableListOf<Deferred<FileModel>>()
-                File(path).listFiles()?.sortedBy{ it.name }?.forEach { file ->
+                File(path).listFiles()?.sortedBy { it.name }?.forEach { file ->
                     resultFiles.add(async(Dispatchers.IO) {
+                        var isChanged = false
                         val mimeType = if(file.isDirectory) {
                             "folder"
                         } else {
                             val filePath = file.path
                             val fileEntity = dao.getFileByPath(filePath)
-                            if(fileEntity == null) {
-                                dao.insertFile(
-                                    FileEntity(
-                                        path = filePath,
-                                        hash_code = file.contentHashCode(),
-                                    )
-                                )
-                            } else {
+                            if(fileEntity != null) {
                                 isChanged = if(fileEntity.isChanged) true else {
-                                    file.contentHashCode() != fileEntity.hash_code
+                                    file.lastModified() != fileEntity.lastModified
                                 }
                             }
                             mimeTypeMap
