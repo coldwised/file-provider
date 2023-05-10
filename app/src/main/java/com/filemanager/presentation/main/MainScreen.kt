@@ -3,6 +3,7 @@ package com.filemanager.presentation.main
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -152,62 +153,67 @@ private fun MainTopBar(
                 }
             }
         )
-        Row(
+        LazyRow(
             modifier = Modifier
                 .padding(horizontal = 16.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
         ) {
-            FilterChip(
-                selected = true,
-                onClick = { onSortTypeChipClick(true) },
-                trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null
-                    )
-                },
-                label = {
-                    Text(
-                        text = listSortType.text
-                    )
-                    DropdownMenu(
-                        expanded = sortTypeDropDownMenuVisible,
-                        onDismissRequest = { onSortTypeChipClick(false) },
-                        offset = DpOffset(0.dp, 0.dp)
-                    ) {
-                        SortType.values().forEach {
-                            SortTypeDropDownItem(it, onSortTypeChange)
+            item {
+                FilterChip(
+                    modifier = Modifier
+                        .padding(end = 8.dp),
+                    selected = true,
+                    onClick = { onSortTypeChipClick(true) },
+                    trailingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = null
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = listSortType.text
+                        )
+                        DropdownMenu(
+                            expanded = sortTypeDropDownMenuVisible,
+                            onDismissRequest = { onSortTypeChipClick(false) },
+                            offset = DpOffset(0.dp, 0.dp)
+                        ) {
+                            SortType.values().forEach {
+                                SortTypeDropDownItem(it, onSortTypeChange)
+                            }
                         }
                     }
-                }
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            FilterChip(
-                selected = true,
-                onClick = { onOrderTypeChipClick(true) },
-                trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null
-                    )
-                },
-                label = {
-                    Text(
-                        text = listOrderType.text
-                    )
-                    DropdownMenu(
-                        expanded = orderTypeDropDownMenuVisible,
-                        onDismissRequest = { onOrderTypeChipClick(false) },
-                        offset = DpOffset(0.dp, 0.dp)
-                    ) {
-                        OrderType.values().forEach {
-                            OrderTypeDropDownItem(it, onOrderTypeChange)
+                )
+            }
+            item {
+                FilterChip(
+                    selected = true,
+                    onClick = { onOrderTypeChipClick(true) },
+                    trailingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = null
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = listOrderType.text
+                        )
+                        DropdownMenu(
+                            expanded = orderTypeDropDownMenuVisible,
+                            onDismissRequest = { onOrderTypeChipClick(false) },
+                            offset = DpOffset(0.dp, 0.dp)
+                        ) {
+                            OrderType.values().forEach {
+                                OrderTypeDropDownItem(it, onOrderTypeChange)
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
