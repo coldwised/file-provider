@@ -24,7 +24,7 @@ class FileRepositoryImpl @Inject constructor(
                 val mimeTypeMap = MimeTypeMap.getSingleton()
                 var isChanged = false
                 val resultFiles = mutableListOf<Deferred<FileModel>>()
-                File(path).listFiles()?.forEach { file ->
+                File(path).listFiles()?.sortedBy{ it.name }?.forEach { file ->
                     resultFiles.add(async(Dispatchers.IO) {
                         val mimeType = if(file.isDirectory) {
                             "folder"

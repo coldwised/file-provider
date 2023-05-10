@@ -1,7 +1,9 @@
 package com.filemanager.core.navigation.destination
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
@@ -12,6 +14,7 @@ import androidx.navigation.navArgument
 import com.filemanager.domain.model.FileModel
 import com.filemanager.presentation.main.MainScreen
 import java.io.File
+
 
 private const val BASE_ROUTE = "main"
 private const val FILE_PATH_KEY = "path"
@@ -38,11 +41,23 @@ fun NavGraphBuilder.main(
         MainScreen(
             directoryName = directoryName,
             path = path,
-            onFileClick = onNavigateToMain,
+            onFileClick = { if(it.type == "folder") onNavigateToMain(it) else {
+                val file = File(it.path)
+                val uri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", file)
+                val intent = Intent(Intent.ACTION_VIEW)
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                intent.setDataAndType(uri, "${it.type}/*")
+                try {
+                    context.startActivity(intent)
+                } catch (e: ActivityNotFoundException) {
+                    Toast.makeText(context, "No app found to open this file", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+            },
             onBackClick = onNavigateBack,
             onShareFileClick = {
                 val file = File(it.path)
-
                 val fileUri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", file)
                 val shareIntent = Intent(Intent.ACTION_SEND)
                 shareIntent.type = "${it.type}/*"

@@ -6,21 +6,24 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.filemanager.R
 import com.filemanager.domain.model.FileModel
+import com.filemanager.presentation.main.type.OrderType
+import com.filemanager.presentation.main.type.SortType
 import java.text.SimpleDateFormat
 
 @Composable
@@ -44,11 +47,18 @@ internal fun MainScreen(
         files = state.files,
         onShareFileClick = onShareFileClick,
         isLoading = state.isLoading,
-        isPermissionDialogVisible = state.isPermissionDialogVisible,
-        onChangePermissionDialogVisibility = viewModel::onChangePermissionDialogVisibility,
+        listSortType = state.listSortType,
+        listOrderType = state.listOrderType,
+        sortTypeDropDownMenuVisible = state.sortTypeDropDownMenuVisible,
+        orderTypeDropDownMenuVisible = state.orderTypeDropDownMenuVisible,
+        onSortTypeChipClick = viewModel::onSortTypeChipClick,
+        onOrderTypeChipClick = viewModel::onOrderTypeChipClick,
+        onOrderTypeChange = viewModel::onListOrderTypeChange,
+        onSortTypeChange = viewModel::onListSortTypeChange,
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainScreen(
     directoryName: String,
@@ -57,13 +67,36 @@ private fun MainScreen(
     onBackClick: () -> Unit,
     onShareFileClick: (FileModel) -> Unit,
     files: List<FileModel>,
-    isPermissionDialogVisible: Boolean,
     isLoading: Boolean,
-    onChangePermissionDialogVisibility: (Boolean) -> Unit
+    listSortType: SortType,
+    listOrderType: OrderType,
+    sortTypeDropDownMenuVisible: Boolean,
+    orderTypeDropDownMenuVisible: Boolean,
+    onOrderTypeChipClick: (Boolean) -> Unit,
+    onSortTypeChange: (SortType) -> Unit,
+    onOrderTypeChange: (OrderType) -> Unit,
+    onSortTypeChipClick: (Boolean) -> Unit,
 ) {
+    val enterAlwaysScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val scrollBehavior = remember { enterAlwaysScrollBehavior }
     Scaffold(
+        modifier = Modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            MainTopBar(directoryName, onBackClick, path != null)
+            MainTopBar(
+                topBarTitle = directoryName,
+                scrollBehavior = scrollBehavior,
+                onBackClick = onBackClick,
+                sortTypeDropDownMenuVisible = sortTypeDropDownMenuVisible,
+                orderTypeDropDownMenuVisible = orderTypeDropDownMenuVisible,
+                onSortTypeChange = onSortTypeChange,
+                onSortTypeChipClick = onSortTypeChipClick,
+                onOrderTypeChipClick = onOrderTypeChipClick,
+                onOrderTypeChange = onOrderTypeChange,
+                listSortType = listSortType,
+                listOrderType = listOrderType,
+                isBackIconVisible = path != null
+            )
         }
     ) { innerPadding ->
         Box(
@@ -73,7 +106,6 @@ private fun MainScreen(
         ) {
             ProgressIndicator(modifier = Modifier.align(Alignment.Center), isLoading)
             FilesList(files, onFileClick, onShareFileClick)
-            PermissionAlertDialog(isPermissionDialogVisible, onChangePermissionDialogVisibility)
         }
     }
 }
@@ -87,19 +119,120 @@ private fun ProgressIndicator(modifier: Modifier, isLoading: Boolean) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MainTopBar(topBarTitle: String, onBackClick: () -> Unit, isBackIconVisible: Boolean) {
-    TopAppBar(
-        title = {
+private fun MainTopBar(
+    topBarTitle: String,
+    scrollBehavior: TopAppBarScrollBehavior,
+    onBackClick: () -> Unit,
+    sortTypeDropDownMenuVisible: Boolean,
+    orderTypeDropDownMenuVisible: Boolean,
+    onSortTypeChange: (SortType) -> Unit,
+    onOrderTypeChange: (OrderType) -> Unit,
+    onSortTypeChipClick: (Boolean) -> Unit,
+    onOrderTypeChipClick: (Boolean) -> Unit,
+    listSortType: SortType,
+    listOrderType: OrderType,
+    isBackIconVisible: Boolean) {
+    Column(
+    ) {
+        TopAppBar(
+            scrollBehavior = scrollBehavior,
+            title = {
+                Text(
+                    text = topBarTitle
+                )
+            },
+            navigationIcon = {
+                if(!isBackIconVisible) return@TopAppBar
+                IconButton(onClick = onBackClick) {
+                    Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null)
+                }
+            }
+        )
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start,
+        ) {
+            FilterChip(
+                selected = true,
+                onClick = { onSortTypeChipClick(true) },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null
+                    )
+                },
+                label = {
+                    Text(
+                        text = listSortType.text
+                    )
+                    DropdownMenu(
+                        expanded = sortTypeDropDownMenuVisible,
+                        onDismissRequest = { onSortTypeChipClick(false) },
+                        offset = DpOffset(0.dp, 0.dp)
+                    ) {
+                        SortType.values().forEach {
+                            SortTypeDropDownItem(it, onSortTypeChange)
+                        }
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            FilterChip(
+                selected = true,
+                onClick = { onOrderTypeChipClick(true) },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null
+                    )
+                },
+                label = {
+                    Text(
+                        text = listOrderType.text
+                    )
+                    DropdownMenu(
+                        expanded = orderTypeDropDownMenuVisible,
+                        onDismissRequest = { onOrderTypeChipClick(false) },
+                        offset = DpOffset(0.dp, 0.dp)
+                    ) {
+                        OrderType.values().forEach {
+                            OrderTypeDropDownItem(it, onOrderTypeChange)
+                        }
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun SortTypeDropDownItem(sortType: SortType, onClick: (SortType) -> Unit) {
+    DropdownMenuItem(
+        modifier = Modifier
+            .height(34.dp)
+            .width(180.dp),
+        text = {
             Text(
-                text = topBarTitle
+                sortType.text
             )
         },
-        navigationIcon = {
-            if(!isBackIconVisible) return@TopAppBar
-            IconButton(onClick = onBackClick) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null)
-            }
-        }
+        onClick = { onClick(sortType) }
+    )
+}
+
+@Composable
+fun OrderTypeDropDownItem(sortType: OrderType, onClick: (OrderType) -> Unit) {
+    DropdownMenuItem(
+        modifier = Modifier
+            .height(34.dp)
+            .width(180.dp),
+        text = {
+            Text(
+                sortType.text
+            )
+        },
+        onClick = { onClick(sortType) }
     )
 }
 
@@ -113,7 +246,7 @@ private fun FilesList(
         modifier = Modifier
             .fillMaxWidth()
     ) {
-        items(files) { file ->
+        items(items = files) { file ->
             FileItem(
                 file = file,
                 onFileClick = onFileClick,
@@ -124,51 +257,16 @@ private fun FilesList(
 }
 
 @Composable
-private fun PermissionAlertDialog(
-    isVisible: Boolean,
-    onChangePermissionDialogVisibility: (Boolean) -> Unit,
-) {
-    if(isVisible) {
-        AlertDialog(
-            onDismissRequest = { onChangePermissionDialogVisibility(false) },
-            confirmButton = {
-                TextButton(onClick = { onChangePermissionDialogVisibility(true) }) {
-                    Text(
-                        stringResource(R.string.permission_dialog_confirm_text)
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { onChangePermissionDialogVisibility(false) }) {
-                    Text(
-                        color = MaterialTheme.colorScheme.error,
-                        text = stringResource(R.string.permission_dialog_cancel_text)
-                    )
-                }
-            },
-        )
-    }
-}
-
-@Composable
 private fun FileItem(
     file: FileModel,
     onFileClick: (FileModel) -> Unit,
     onShareFileClick: (FileModel) -> Unit
 ) {
     val dateFormatter = SimpleDateFormat("dd.MM.yyyy")
-    val formattedDate = remember {
-        dateFormatter.format(file.creationDate)
-    }
-    val name = remember {
-        file.name
-    }
-    val size = remember {
-        file.size.toString()
-    }
-    val isChanged = remember {
-        file.isChanged
-    }
+    val formattedDate = dateFormatter.format(file.creationDate)
+    val name = file.name
+    val size = file.size.toString()
+    val isChanged = file.isChanged
     val fileType = file.type
     val icon = when(fileType) {
         "audio" -> painterResource(id = R.drawable.ic_audio_24)

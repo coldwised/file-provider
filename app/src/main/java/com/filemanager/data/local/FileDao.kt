@@ -20,7 +20,7 @@ interface FileDao {
     @Query("UPDATE $TABLE_NAME SET hash_code =:hashCode, isChanged =:isChanged WHERE id =:id")
     suspend fun updateFile(id: Int, hashCode: Long, isChanged: Boolean)
 
-    @Query("UPDATE $TABLE_NAME SET isChanged = false")
+    @Query("UPDATE $TABLE_NAME SET isChanged = 0")
     suspend fun resetFiles()
 
     companion object {

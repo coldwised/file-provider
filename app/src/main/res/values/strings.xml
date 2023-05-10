@@ -4,4 +4,6 @@
     <string name="file_changed">new changes*</string>
     <string name="permission_dialog_confirm_text">Разрешить</string>
     <string name="permission_dialog_cancel_text">Отмена</string>
+    <string name="permission_dialog_title">Запрос разрешения</string>
+    <string name="permission_dialog_text">Требуется разрешение для просмотра файлов на устройстве</string>
 </resources>
