@@ -6,6 +6,7 @@ import com.filemanager.domain.usecase.GetFilesUseCase
 import com.filemanager.presentation.main.type.OrderType
 import com.filemanager.presentation.main.type.SortType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -22,11 +23,21 @@ class MainScreenViewModel @Inject constructor(
 
     fun onStart(path: String?) {
         val state = _state
-        if(!state.value.isLoading)
+        if(state.value.files != null)
             return
         viewModelScope.launch {
+            delay(200)
+            if(state.value.files == null) {
+                state.update {
+                    it.copy(
+                        isLoading = true
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
             getFilesUseCase(path).collect { files ->
-                _state.update {
+                state.update {
                     it.copy(
                         files = files,
                         isLoading = false,
@@ -47,7 +58,7 @@ class MainScreenViewModel @Inject constructor(
     fun onListSortTypeChange(sortType: SortType) {
         viewModelScope.launch {
             _state.update {
-                val files = it.files
+                val files = it.files.orEmpty()
                 it.copy(
                     files = when(sortType) {
                         SortType.ByName -> {
@@ -114,7 +125,7 @@ class MainScreenViewModel @Inject constructor(
         _state.update {
             it.copy(
                 listOrderType = orderType,
-                files = if(it.listOrderType != orderType) it.files.asReversed() else it.files,
+                files = if(it.listOrderType != orderType) it.files.orEmpty().asReversed() else it.files,
                 orderTypeDropDownMenuVisible = false
             )
         }

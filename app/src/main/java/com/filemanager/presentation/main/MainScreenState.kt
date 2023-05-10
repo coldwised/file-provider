@@ -5,8 +5,8 @@ import com.filemanager.presentation.main.type.OrderType
 import com.filemanager.presentation.main.type.SortType
 
 data class MainScreenState(
-    val files: List<FileModel> = emptyList(),
-    val isLoading: Boolean = true,
+    val files: List<FileModel>? = null,
+    val isLoading: Boolean = false,
     val listOrderType: OrderType = OrderType.ByAscending,
     val sortTypeDropDownMenuVisible: Boolean = false,
     val orderTypeDropDownMenuVisible: Boolean = false,
