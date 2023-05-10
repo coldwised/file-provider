@@ -19,6 +19,7 @@ object RoomModule {
         return Room.databaseBuilder(
             app, FileDatabase::class.java, FileDatabase.name
         )
+            .fallbackToDestructiveMigration()
             .build()
     }
 

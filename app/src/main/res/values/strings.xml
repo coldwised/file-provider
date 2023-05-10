@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">File manager</string>
     <string name="main_topbar_title">Проводник</string>
-    <string name="file_changed">new *</string>
+    <string name="file_changed">new changes*</string>
+    <string name="permission_dialog_confirm_text">Разрешить</string>
+    <string name="permission_dialog_cancel_text">Отмена</string>
 </resources>

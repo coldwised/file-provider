@@ -23,10 +23,19 @@ class MainScreenViewModel @Inject constructor(
             getFilesUseCase(path).collect { files ->
                 _state.update {
                     it.copy(
-                        files = files
+                        files = files,
+                        isLoading = false
                     )
                 }
             }
+        }
+    }
+
+    fun onChangePermissionDialogVisibility(visible: Boolean) {
+        _state.update {
+            it.copy(
+                isPermissionDialogVisible = visible
+            )
         }
     }
 }

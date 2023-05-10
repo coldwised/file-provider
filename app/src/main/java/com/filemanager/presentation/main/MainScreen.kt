@@ -6,34 +6,61 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.filemanager.R
 import com.filemanager.domain.model.FileModel
-import java.io.File
 import java.text.SimpleDateFormat
-import java.util.Date
 
 @Composable
-fun MainScreen(
+internal fun MainScreen(
     directoryName: String = stringResource(id = R.string.main_topbar_title),
     path: String? = null,
     onFileClick: (FileModel) -> Unit,
     onBackClick: () -> Unit,
+    onShareFileClick: (FileModel) -> Unit,
     viewModel: MainScreenViewModel = hiltViewModel()
 ) {
     LaunchedEffect(key1 = true) {
         viewModel.onStart(path)
     }
-    val state = viewModel.state.collectAsState().value
+    val state = viewModel.state.collectAsStateWithLifecycle().value
+    MainScreen(
+        directoryName = directoryName,
+        path = path,
+        onFileClick = onFileClick,
+        onBackClick = onBackClick,
+        files = state.files,
+        onShareFileClick = onShareFileClick,
+        isLoading = state.isLoading,
+        isPermissionDialogVisible = state.isPermissionDialogVisible,
+        onChangePermissionDialogVisibility = viewModel::onChangePermissionDialogVisibility,
+    )
+}
+
+@Composable
+private fun MainScreen(
+    directoryName: String,
+    path: String?,
+    onFileClick: (FileModel) -> Unit,
+    onBackClick: () -> Unit,
+    onShareFileClick: (FileModel) -> Unit,
+    files: List<FileModel>,
+    isPermissionDialogVisible: Boolean,
+    isLoading: Boolean,
+    onChangePermissionDialogVisibility: (Boolean) -> Unit
+) {
     Scaffold(
         topBar = {
             MainTopBar(directoryName, onBackClick, path != null)
@@ -44,14 +71,23 @@ fun MainScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            FilesList(state.files, onFileClick)
+            ProgressIndicator(modifier = Modifier.align(Alignment.Center), isLoading)
+            FilesList(files, onFileClick, onShareFileClick)
+            PermissionAlertDialog(isPermissionDialogVisible, onChangePermissionDialogVisibility)
         }
+    }
+}
+
+@Composable
+private fun ProgressIndicator(modifier: Modifier, isLoading: Boolean) {
+    if(isLoading) {
+        CircularProgressIndicator(modifier = modifier)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainTopBar(topBarTitle: String, onBackClick: () -> Unit, isBackIconVisible: Boolean) {
+private fun MainTopBar(topBarTitle: String, onBackClick: () -> Unit, isBackIconVisible: Boolean) {
     TopAppBar(
         title = {
             Text(
@@ -68,7 +104,11 @@ fun MainTopBar(topBarTitle: String, onBackClick: () -> Unit, isBackIconVisible: 
 }
 
 @Composable
-fun FilesList(files: List<FileModel>, onFileClick: (FileModel) -> Unit) {
+private fun FilesList(
+    files: List<FileModel>,
+    onFileClick: (FileModel) -> Unit,
+    onShareFileClick: (FileModel) -> Unit
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -77,13 +117,45 @@ fun FilesList(files: List<FileModel>, onFileClick: (FileModel) -> Unit) {
             FileItem(
                 file = file,
                 onFileClick = onFileClick,
+                onShareFileClick = onShareFileClick,
             )
         }
     }
 }
 
 @Composable
-fun FileItem(file: FileModel, onFileClick: (FileModel) -> Unit) {
+private fun PermissionAlertDialog(
+    isVisible: Boolean,
+    onChangePermissionDialogVisibility: (Boolean) -> Unit,
+) {
+    if(isVisible) {
+        AlertDialog(
+            onDismissRequest = { onChangePermissionDialogVisibility(false) },
+            confirmButton = {
+                TextButton(onClick = { onChangePermissionDialogVisibility(true) }) {
+                    Text(
+                        stringResource(R.string.permission_dialog_confirm_text)
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onChangePermissionDialogVisibility(false) }) {
+                    Text(
+                        color = MaterialTheme.colorScheme.error,
+                        text = stringResource(R.string.permission_dialog_cancel_text)
+                    )
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun FileItem(
+    file: FileModel,
+    onFileClick: (FileModel) -> Unit,
+    onShareFileClick: (FileModel) -> Unit
+) {
     val dateFormatter = SimpleDateFormat("dd.MM.yyyy")
     val formattedDate = remember {
         dateFormatter.format(file.creationDate)
@@ -97,7 +169,8 @@ fun FileItem(file: FileModel, onFileClick: (FileModel) -> Unit) {
     val isChanged = remember {
         file.isChanged
     }
-    val icon = when(file.type) {
+    val fileType = file.type
+    val icon = when(fileType) {
         "audio" -> painterResource(id = R.drawable.ic_audio_24)
         "image" -> painterResource(id = R.drawable.ic_image_24)
         "text" -> painterResource(id = R.drawable.ic_text_24)
@@ -112,6 +185,16 @@ fun FileItem(file: FileModel, onFileClick: (FileModel) -> Unit) {
         leadingContent = {
             Icon(painter = icon, contentDescription = null)
         },
+        trailingContent = if(fileType == "folder") null else {
+            {
+                IconButton(onClick = { onShareFileClick(file) }) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = null
+                    )
+                }
+            }
+        },
         headlineContent = {
             Text(
                 text = name
@@ -121,19 +204,26 @@ fun FileItem(file: FileModel, onFileClick: (FileModel) -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = size + " Б"
-                )
-                Spacer(modifier = Modifier.width(18.dp))
-                Text(
-                    text = formattedDate
-                )
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = size + " Б"
+                    )
+                    Spacer(modifier = Modifier.width(18.dp))
+                    Text(
+                        text = formattedDate
+                    )
+                }
                 if(isChanged) {
                     Text(
                         text = stringResource(R.string.file_changed),
-                        color = MaterialTheme.colorScheme.secondary
+                        color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.End
                     )
                 }
             }

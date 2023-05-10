@@ -1,6 +1,9 @@
 package com.filemanager.core.navigation.destination
 
+import android.content.Intent
 import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -31,11 +34,22 @@ fun NavGraphBuilder.main(
         val encodedDirectoryName = arguments?.getString(DIRECTORY_NAME_KEY)
         val directoryName = Uri.decode(encodedDirectoryName) ?: "Проводник"
         val path = Uri.decode(encodedPath)
+        val context = LocalContext.current
         MainScreen(
             directoryName = directoryName,
             path = path,
             onFileClick = onNavigateToMain,
-            onBackClick = onNavigateBack
+            onBackClick = onNavigateBack,
+            onShareFileClick = {
+                val file = File(it.path)
+
+                val fileUri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", file)
+                val shareIntent = Intent(Intent.ACTION_SEND)
+                shareIntent.type = "${it.type}/*"
+                shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri)
+                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                context.startActivity(Intent.createChooser(shareIntent, "Share file"))
+            }
         )
     }
 }

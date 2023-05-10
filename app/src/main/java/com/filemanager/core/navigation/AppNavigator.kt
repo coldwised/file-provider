@@ -19,7 +19,7 @@ fun AppNavigator(
             onNavigateToMain = {
                 navController.navigateToMain(it.path, it.name)
             },
-            onNavigateBack = navController::navigateUp
+            onNavigateBack = navController::navigateUp,
         )
     }
 }
